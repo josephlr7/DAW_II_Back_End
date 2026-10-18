@@ -1,0 +1,12 @@
+server:
+  port: 8092
+
+spring:
+  application:
+    name: Payment-Service
+  config:
+    import: "optional:configserver:http://localhost:8888"
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

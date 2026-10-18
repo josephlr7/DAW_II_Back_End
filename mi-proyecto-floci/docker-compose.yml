@@ -1,0 +1,184 @@
+version: '3.8'
+
+services:
+  # 1. Base de datos MySQL
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # 2. Servidor Eureka
+  eureka-server:
+    build: ../EUREKA-SERVER
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx200m -XX:+UseSerialGC
+
+  # 3. Servidor de Configuración
+  config-server:
+    build: ../Config-Service
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    depends_on:
+      - eureka-server
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx200m -XX:+UseSerialGC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+
+  # 4. API Gateway (Ruteo y Front-End estático en puerto 8080)
+  gateway-service:
+    build: ../GATEWAY-Service
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+      - config-server
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx220m -XX:+UseSerialGC
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+
+  # 5. Order-Service
+  order-service:
+    build: ../Order-Service
+    container_name: order-service
+    ports:
+      - "8090:8090"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql-db
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx200m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=order-service
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/db_servicios_web?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SERVICES_IDENTITY_URL=http://identity-service:8091
+      - SERVICES_PAYMENT_URL=http://payment-service:8092/api/payments
+      - SERVICES_BILLING_WSDL=http://billing-service:8093/ws/billing?wsdl
+
+  # 6. Product-Service (Catálogo de productos con Seeder automático)
+  product-service:
+    build: ../Product-Service
+    container_name: product-service
+    ports:
+      - "8096:8096"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql-db
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx200m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=product-service
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/db_servicios_web?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  # 7. Identity-Service (Consulta en vivo DNI RENIEC y RUC SUNAT)
+  identity-service:
+    build: ../Identity-Service
+    container_name: identity-service
+    ports:
+      - "8091:8091"
+    depends_on:
+      - eureka-server
+      - config-server
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx220m -XX:+UseSerialGC
+      - SERVER_PORT=8091
+      - SPRING_APPLICATION_NAME=identity-service
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+
+  # 8. Auth-Service (Autenticación JWT y Roles de usuarios)
+  auth-service:
+    build: ../Auth-Service
+    container_name: auth-service
+    ports:
+      - "8094:8094"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql-db
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx200m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=auth-service
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/db_servicios_web?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  # 9. Payment-Service (Pasarela de pagos)
+  payment-service:
+    build: ../Payment-Service
+    container_name: payment-service
+    ports:
+      - "8092:8092"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql-db
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx180m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=payment-service
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/db_servicios_web?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  # 10. Billing-Service (Emisión de comprobantes electrónicos SOAP)
+  billing-service:
+    build: ../Billing-Service
+    container_name: billing-service
+    ports:
+      - "8093:8093"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql-db
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx180m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=billing-service
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/db_servicios_web?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+  # 11. Shipping-Service (Logística y despachos)
+  shipping-service:
+    build: ../Shipping-Service
+    container_name: shipping-service
+    ports:
+      - "8097:8097"
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql-db
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx180m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=shipping-service
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/db_servicios_web?useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+
+volumes:
+  mysql_data:

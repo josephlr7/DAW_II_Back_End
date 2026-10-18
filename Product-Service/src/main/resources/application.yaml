@@ -1,0 +1,27 @@
+server:
+  port: 8096
+
+spring:
+  application:
+    name: Product-Service
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/db_servicios_web?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+cloudinary:
+  cloud-name: glcgv7uc
+  api-key: 182271186211353
+  api-secret: VJVSqo0g6ASTZz2uIQap-S4hAxU
+

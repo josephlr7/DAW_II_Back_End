@@ -1,0 +1,45 @@
+# ==========================================
+# Frontend (Alojado en repositorio independiente)
+# ==========================================
+Front-End/
+**/src/main/resources/static/
+
+
+# ==========================================
+# Archivos comprimidos y pesados (> 100MB)
+# ==========================================
+*.tar.gz
+*.rar
+*.zip
+*.7z
+despliegue.tar.gz
+files.rar
+
+# ==========================================
+# Compilación de Java / Maven
+# ==========================================
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# ==========================================
+# IDEs y Editores de Código
+# ==========================================
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+untitled/
+
+# ==========================================
+# Sistema Operativo y Temporales
+# ==========================================
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+scratch/
