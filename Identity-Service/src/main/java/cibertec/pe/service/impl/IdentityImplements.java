@@ -14,7 +14,9 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class IdentityImplements implements IIDentityService {
 
-    private final String TOKEN_API = "a82d9f7a32dc7b3a83f9c61af8a342eeb70803e139227f17155037c30d37ef7c";
+    @org.springframework.beans.factory.annotation.Value("${api.peru.token:500168ee4fd5c2a7b51102d6faacde7ef3277e6300adefdc5ec87a892bd3d197}")
+    private String tokenApi = "500168ee4fd5c2a7b51102d6faacde7ef3277e6300adefdc5ec87a892bd3d197";
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     private static final java.util.Map<String, ClientIdentity> DNI_PRESETS = new java.util.HashMap<>();
@@ -25,8 +27,8 @@ public class IdentityImplements implements IIDentityService {
         ClientIdentity d1 = new ClientIdentity();
         d1.setNumeroDocumento("71865126");
         d1.setTipoDocumento("DNI");
-        d1.setNombreRazonSocial("FLOR DE MARIA QUISPE HUAMAN");
-        d1.setDireccionFiscal("JR. LAS FLORES 234, PUEBLO LIBRE, LIMA");
+        d1.setNombreRazonSocial("MAURICIO MORILLO, KARLA YULISSA");
+        d1.setDireccionFiscal("LIMA, PERÚ");
         DNI_PRESETS.put("71865126", d1);
 
         ClientIdentity d2 = new ClientIdentity();
@@ -95,7 +97,7 @@ public class IdentityImplements implements IIDentityService {
         try {
             String url = "https://apiperu.dev/api/dni/" + cleanDni;
             HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(TOKEN_API);
+            headers.setBearerAuth(tokenApi);
             headers.set("Content-Type", "application/json");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -158,7 +160,7 @@ public class IdentityImplements implements IIDentityService {
             String url = "https://apiperu.dev/api/ruc/" + cleanRuc;
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(TOKEN_API);
+            headers.setBearerAuth(tokenApi);
             headers.set("Content-Type", "application/json");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
